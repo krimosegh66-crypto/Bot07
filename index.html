@@ -34,10 +34,10 @@
             <input 
                 type="text" 
                 id="lightning-invoice" 
-                placeholder="أنشئ فاتورة من محفظتك (مثل Wallet of Satoshi أو Alby) وادخلها هنا..." 
+                placeholder="أنشئ فاتورة من محفظتك وادخلها هنا..." 
                 class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-emerald-500"
             />
-            <p class="text-[10px] text-slate-500">ملاحظة: شبكة البرق تتطلب فاتورة مؤقتة (BOLT11 Invoice) لكل عملية سحب فورية بدون رسوم.</p>
+            <p class="text-[10px] text-slate-500">ملاحظة: شبكة البرق تتطلب فاتورة مؤقتة (BOLT11 Invoice) لكل عملية سحب.</p>
         </div>
 
         <!-- لوحة التحكم والسرعة (0 إلى 500 هاش) -->
@@ -91,11 +91,12 @@
 
     </div>
 
-    <!-- كود الجافاسكريبت وبرمجة الاتصال بالسيرفر -->
+    <!-- كود الجافاسكريبت مع الحفظ التلقائي (LocalStorage) -->
     <script>
         let hashSpeed = 100;
-        let satoshis = 0.00;
-        let isBoosting = false;
+        
+        // استرجاع الرصيد المحفوظ مسبقاً من ذاكرة المتصفح، أو البدء بـ 0.00
+        let satoshis = parseFloat(localStorage.getItem('saved_satoshis')) || 0.00;
 
         const slider = document.getElementById('speed-slider');
         const speedLabel = document.getElementById('speed-label');
@@ -104,6 +105,9 @@
         const withdrawBtn = document.getElementById('withdraw-btn');
         const statusText = document.getElementById('status-text');
         const invoiceInput = document.getElementById('lightning-invoice');
+
+        // تحديث عرض الرصيد فور فتح الصفحة
+        balanceEl.textContent = satoshis.toFixed(4);
 
         slider.addEventListener('input', (e) => {
             hashSpeed = Number(e.target.value);
@@ -122,10 +126,12 @@
             }
         });
 
-        // عملية السحب عبر الاتصال بسيرفر Python FastAPI
+        let isBoosting = false;
+
+        // عملية السحب
         withdrawBtn.addEventListener('click', async () => {
             const invoice = invoiceInput.value.trim();
-            const currentBalance = Math.floor(satoshis); // تحويل الرصيد إلى أعداد صحيحة من الساتوشي
+            const currentBalance = Math.floor(satoshis);
 
             if (currentBalance < 10) {
                 alert("عذراً، الحد الأدنى للسحب هو 10 ساتوشي!");
@@ -133,7 +139,7 @@
             }
 
             if (!invoice.startsWith("lnbc")) {
-                alert("يرجى إدخال فاتورة شبكة البرق صالح تبدأ بـ lnbc...!");
+                alert("يرجى إدخال فاتورة شبكة البرق تبدأ بـ lnbc...!");
                 return;
             }
 
@@ -141,12 +147,9 @@
             withdrawBtn.textContent = "جاري المعالجة عبر شبكة البرق...";
 
             try {
-                // إرسال الطلب إلى سيرفر FastAPI المحلي
                 const response = await fetch('http://127.0.0.1:8000/api/withdraw', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         wallet_address: "bc1qddn6a3szw0zkd0ykagp4nvckfqur26nwpl883j",
                         lightning_invoice: invoice,
@@ -160,24 +163,28 @@
                     alert(`✅ نجاح العملية: ${data.message}`);
                     satoshis = 0.00;
                     balanceEl.textContent = "0.00";
+                    localStorage.setItem('saved_satoshis', satoshis); // تحديث الذاكرة بعد السحب
                     invoiceInput.value = "";
                 } else {
                     alert(`❌ خطأ من السيرفر: ${data.detail || 'فشل تنفيذ الدفع'}`);
                 }
             } catch (error) {
-                alert("❌ تعذر الاتصال بالسيرفر الخلفي (تأكد من تشغيل ملف Python FastAPI على المنفذ 8000).");
+                alert("❌ تعذر الاتصال بالسيرفر الخلفي (تأكد من تشغيل ملف Python FastAPI).");
             } finally {
                 withdrawBtn.disabled = false;
                 withdrawBtn.textContent = "📤 إرسال عبر شبكة البرق";
             }
         });
 
-        // العداد التراكمي
+        // العداد التراكمي مع الحفظ التلقائي في ذاكرة المتصفح كل ثانية
         setInterval(() => {
             if (hashSpeed > 0) {
                 const earned = (hashSpeed / 10000) * (isBoosting ? 2 : 1);
                 satoshis += earned;
                 balanceEl.textContent = satoshis.toFixed(4);
+                
+                // حفظ الرصيد الجديد في الذاكرة المحلية لكي لا يضيع عند التحديث
+                localStorage.setItem('saved_satoshis', satoshis);
             }
         }, 1000);
     </script>
