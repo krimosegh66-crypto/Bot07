@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منجم الساتوشي الذكي</title>
+    <!-- استدعاء إطار التصميم Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 p-6 flex flex-col items-center justify-center font-sans">
+    
+    <div class="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-6">
+        
+        <!-- رأس التطبيق ومعلومات المحفظة -->
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 text-amber-400 text-xl">⚡</div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">منجم الساتوشي الذكي</h1>
+                    <span class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">🔒 متصل بشبكة البرق الآمنة</span>
+                </div>
+            </div>
+            <div class="text-left">
+                <span class="text-xs text-slate-400 block">الرصيد المكتسب</span>
+                <div>
+                    <span id="balance" class="text-lg font-mono font-bold text-amber-400">0.00</span> 
+                    <span class="text-xs text-amber-400">ساتوشي</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- عرض عنوان المحفظة -->
+        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
+            <div class="flex items-center space-x-2 space-x-reverse overflow-hidden">
+                <span class="text-slate-400">👛</span>
+                <span class="text-xs font-mono text-slate-300 truncate">bc1qddn6a3szw0zkd0ykagp4nvckfqur26nwpl883j</span>
+            </div>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full shrink-0">نشط</span>
+        </div>
+
+        <!-- لوحة التحكم والسرعة (0 إلى 500 هاش) -->
+        <div class="bg-slate-950/40 p-5 rounded-xl border border-slate-800 space-y-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span>💻</span>
+                    <span class="text-sm font-medium">سرعة التعدين الافتراضية</span>
+                </div>
+                <span id="speed-label" class="text-lg font-mono font-bold text-indigo-400">100 H/s</span>
+            </div>
+
+            <!-- شريط التحكم (Slider) من 0 إلى 500 -->
+            <input 
+                type="range" 
+                id="speed-slider" 
+                min="0" 
+                max="500" 
+                step="10"
+                value="100" 
+                class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            />
+            <div class="flex justify-between text-[11px] text-slate-500 font-mono">
+                <span>0 H/s</span>
+                <span>250 H/s</span>
+                <span>500 H/s (القصوى)</span>
+            </div>
+        </div>
+
+        <!-- زر تعزيز السرعة المؤقت (Boost) -->
+        <div class="flex items-center justify-between pt-2">
+            <div class="flex items-center gap-2 text-xs text-slate-400">
+                <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="status-text">حالة المنجم: يعمل بكفاءة</span>
+            </div>
+            <button
+                id="boost-btn"
+                class="px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5"
+            >
+                ⚡ تفعيل التعزيز السريع
+            </button>
+        </div>
+
+    </div>
+
+    <!-- البرمجة المسؤولة عن تشغيل العدادات -->
+    <script>
+        let hashSpeed = 100;
+        let satoshis = 0.00;
+        let isBoosting = false;
+
+        const slider = document.getElementById('speed-slider');
+        const speedLabel = document.getElementById('speed-label');
+        const balanceEl = document.getElementById('balance');
+        const boostBtn = document.getElementById('boost-btn');
+        const statusText = document.getElementById('status-text');
+
+        // تحديث السرعة عند تحريك الشريط
+        slider.addEventListener('input', (e) => {
+            hashSpeed = Number(e.target.value);
+            speedLabel.textContent = hashSpeed + ' H/s';
+            if (hashSpeed === 0) {
+                statusText.textContent = 'حالة المنجم: متوقف مؤقتاً';
+            } else {
+                statusText.textContent = 'حالة المنجم: يعمل بكفاءة';
+            }
+        });
+
+        // تفعيل أو إلغاء التعزيز
+        boostBtn.addEventListener('click', () => {
+            isBoosting = !isBoosting;
+            if (isBoosting) {
+                boostBtn.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-lg bg-amber-500 text-slate-950 shadow-amber-500/20 animate-pulse flex items-center gap-1.5";
+                boostBtn.innerHTML = "⚡ مُعزز مضاعف (2x)";
+            } else {
+                boostBtn.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5";
+                boostBtn.innerHTML = "⚡ تفعيل التعزيز السريع";
+            }
+        });
+
+        // حلقة تجميع الساتوشي كل ثانية
+        setInterval(() => {
+            if (hashSpeed > 0) {
+                const earned = (hashSpeed / 10000) * (isBoosting ? 2 : 1);
+                satoshis += earned;
+                balanceEl.textContent = satoshis.toFixed(4);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
