@@ -1,0 +1,2 @@
+LN_NODE_URL=https://api.lnbits.com/api/v1/payments
+LN_API_KEY=ضع_مفتاح_الإدارة_أو_الفاتورة_الخاص_بك_هنا
