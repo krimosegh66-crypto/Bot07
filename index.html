@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منجم الساتوشي الذكي</title>
-    <!-- استدعاء إطار التصميم Tailwind CSS -->
+    <title>منجم الساتوشي الذكي - شبكة البرق</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 p-6 flex flex-col items-center justify-center font-sans">
     
     <div class="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-6">
         
-        <!-- رأس التطبيق ومعلومات المحفظة -->
+        <!-- رأس التطبيق -->
         <div class="flex items-center justify-between border-b border-slate-800 pb-4">
             <div class="flex items-center space-x-3 space-x-reverse">
                 <div class="bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 text-amber-400 text-xl">⚡</div>
                 <div>
                     <h1 class="text-xl font-bold tracking-wide">منجم الساتوشي الذكي</h1>
-                    <span class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">🔒 متصل بشبكة البرق الآمنة</span>
+                    <span class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">🔒 متصل بشبكة البرق (Lightning)</span>
                 </div>
             </div>
             <div class="text-left">
@@ -29,13 +28,16 @@
             </div>
         </div>
 
-        <!-- عرض عنوان المحفظة -->
-        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
-            <div class="flex items-center space-x-2 space-x-reverse overflow-hidden">
-                <span class="text-slate-400">👛</span>
-                <span class="text-xs font-mono text-slate-300 truncate">bc1qddn6a3szw0zkd0ykagp4nvckfqur26nwpl883j</span>
-            </div>
-            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full shrink-0">نشط</span>
+        <!-- حقل إدخال فاتورة شبكة البرق (Lightning Invoice) -->
+        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-2">
+            <label class="block text-xs font-medium text-slate-300">فاتورة شبكة البرق للسحب (تبدأ بـ lnbc...):</label>
+            <input 
+                type="text" 
+                id="lightning-invoice" 
+                placeholder="أنشئ فاتورة من محفظتك (مثل Wallet of Satoshi أو Alby) وادخلها هنا..." 
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-emerald-500"
+            />
+            <p class="text-[10px] text-slate-500">ملاحظة: شبكة البرق تتطلب فاتورة مؤقتة (BOLT11 Invoice) لكل عملية سحب فورية بدون رسوم.</p>
         </div>
 
         <!-- لوحة التحكم والسرعة (0 إلى 500 هاش) -->
@@ -48,7 +50,6 @@
                 <span id="speed-label" class="text-lg font-mono font-bold text-indigo-400">100 H/s</span>
             </div>
 
-            <!-- شريط التحكم (Slider) من 0 إلى 500 -->
             <input 
                 type="range" 
                 id="speed-slider" 
@@ -65,23 +66,32 @@
             </div>
         </div>
 
-        <!-- زر تعزيز السرعة المؤقت (Boost) -->
-        <div class="flex items-center justify-between pt-2">
+        <!-- الأزرار والحالة -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
             <div class="flex items-center gap-2 text-xs text-slate-400">
                 <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span id="status-text">حالة المنجم: يعمل بكفاءة</span>
             </div>
-            <button
-                id="boost-btn"
-                class="px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5"
-            >
-                ⚡ تفعيل التعزيز السريع
-            </button>
+            
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button
+                    id="boost-btn"
+                    class="flex-1 sm:flex-none px-3 py-2 rounded-xl text-xs font-semibold transition-all bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                >
+                    ⚡ تعزيز (2x)
+                </button>
+                <button
+                    id="withdraw-btn"
+                    class="flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1"
+                >
+                    📤 إرسال عبر شبكة البرق
+                </button>
+            </div>
         </div>
 
     </div>
 
-    <!-- البرمجة المسؤولة عن تشغيل العدادات -->
+    <!-- كود الجافاسكريبت وبرمجة الاتصال بالسيرفر -->
     <script>
         let hashSpeed = 100;
         let satoshis = 0.00;
@@ -91,32 +101,78 @@
         const speedLabel = document.getElementById('speed-label');
         const balanceEl = document.getElementById('balance');
         const boostBtn = document.getElementById('boost-btn');
+        const withdrawBtn = document.getElementById('withdraw-btn');
         const statusText = document.getElementById('status-text');
+        const invoiceInput = document.getElementById('lightning-invoice');
 
-        // تحديث السرعة عند تحريك الشريط
         slider.addEventListener('input', (e) => {
             hashSpeed = Number(e.target.value);
             speedLabel.textContent = hashSpeed + ' H/s';
-            if (hashSpeed === 0) {
-                statusText.textContent = 'حالة المنجم: متوقف مؤقتاً';
-            } else {
-                statusText.textContent = 'حالة المنجم: يعمل بكفاءة';
-            }
+            statusText.textContent = hashSpeed === 0 ? 'حالة المنجم: متوقف مؤقتاً' : 'حالة المنجم: يعمل بكفاءة';
         });
 
-        // تفعيل أو إلغاء التعزيز
         boostBtn.addEventListener('click', () => {
             isBoosting = !isBoosting;
             if (isBoosting) {
-                boostBtn.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-lg bg-amber-500 text-slate-950 shadow-amber-500/20 animate-pulse flex items-center gap-1.5";
-                boostBtn.innerHTML = "⚡ مُعزز مضاعف (2x)";
+                boostBtn.className = "flex-1 sm:flex-none px-3 py-2 rounded-xl text-xs font-semibold transition-all bg-amber-500 text-slate-950 shadow-amber-500/20 animate-pulse";
+                boostBtn.textContent = "⚡ مُعزز (2x)";
             } else {
-                boostBtn.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5";
-                boostBtn.innerHTML = "⚡ تفعيل التعزيز السريع";
+                boostBtn.className = "flex-1 sm:flex-none px-3 py-2 rounded-xl text-xs font-semibold transition-all bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700";
+                boostBtn.textContent = "⚡ تعزيز (2x)";
             }
         });
 
-        // حلقة تجميع الساتوشي كل ثانية
+        // عملية السحب عبر الاتصال بسيرفر Python FastAPI
+        withdrawBtn.addEventListener('click', async () => {
+            const invoice = invoiceInput.value.trim();
+            const currentBalance = Math.floor(satoshis); // تحويل الرصيد إلى أعداد صحيحة من الساتوشي
+
+            if (currentBalance < 10) {
+                alert("عذراً، الحد الأدنى للسحب هو 10 ساتوشي!");
+                return;
+            }
+
+            if (!invoice.startsWith("lnbc")) {
+                alert("يرجى إدخال فاتورة شبكة البرق صالح تبدأ بـ lnbc...!");
+                return;
+            }
+
+            withdrawBtn.disabled = true;
+            withdrawBtn.textContent = "جاري المعالجة عبر شبكة البرق...";
+
+            try {
+                // إرسال الطلب إلى سيرفر FastAPI المحلي
+                const response = await fetch('http://127.0.0.1:8000/api/withdraw', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        wallet_address: "bc1qddn6a3szw0zkd0ykagp4nvckfqur26nwpl883j",
+                        lightning_invoice: invoice,
+                        amount_sats: currentBalance
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`✅ نجاح العملية: ${data.message}`);
+                    satoshis = 0.00;
+                    balanceEl.textContent = "0.00";
+                    invoiceInput.value = "";
+                } else {
+                    alert(`❌ خطأ من السيرفر: ${data.detail || 'فشل تنفيذ الدفع'}`);
+                }
+            } catch (error) {
+                alert("❌ تعذر الاتصال بالسيرفر الخلفي (تأكد من تشغيل ملف Python FastAPI على المنفذ 8000).");
+            } finally {
+                withdrawBtn.disabled = false;
+                withdrawBtn.textContent = "📤 إرسال عبر شبكة البرق";
+            }
+        });
+
+        // العداد التراكمي
         setInterval(() => {
             if (hashSpeed > 0) {
                 const earned = (hashSpeed / 10000) * (isBoosting ? 2 : 1);
